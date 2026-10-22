@@ -121,7 +121,7 @@ fun Solicitud(
                         carrito = panolViewModel.carrito,
                         onSuccess = {
                             panolViewModel.vaciarCarrito()
-                            vibrar(context)
+                            vibrar(context, 500L)
                             Toast.makeText(context, "Solicitud enviada al pañol", Toast.LENGTH_SHORT).show()
                             onSolicitudEnviada()
                         },
