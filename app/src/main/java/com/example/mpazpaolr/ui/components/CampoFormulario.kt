@@ -15,7 +15,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 
-// Campo de formulario con ícono, borde rojo y mensaje cuando tiene error.
 @Composable
 fun CampoFormulario(
     value: String,

@@ -39,7 +39,6 @@ class SolicitudViewModel(application: Application) : AndroidViewModel(applicatio
         uiState = SolicitudModel()
     }
 
-    // Valida todos los campos y la regla de 3 horas; guarda en Room si todo es correcto.
     fun onEnviarClick(
         carrito: List<CarritoItem>,
         ahoraMillis: Long = System.currentTimeMillis(),

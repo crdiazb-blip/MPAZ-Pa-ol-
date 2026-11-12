@@ -24,7 +24,6 @@ object Routes {
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
-    // ViewModel compartido (catálogo + carrito) a nivel de Activity
     val panolViewModel: PanolViewModel = viewModel()
 
     NavHost(

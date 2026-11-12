@@ -20,7 +20,6 @@ class PanolRepository private constructor(private val db: AppDatabase) {
     val equipos: Flow<List<EquipoEntity>> = dao.observarEquipos()
     val solicitudes: Flow<List<SolicitudConItems>> = dao.observarSolicitudes()
 
-    // Carga el catálogo ficticio la primera vez que se abre la app.
     suspend fun cargarDatosIniciales() {
         if (dao.contarEquipos() == 0) dao.insertarEquipos(catalogoFicticio())
         if (dao.contarSolicitudes() == 0) cargarSolicitudesDeEjemplo()

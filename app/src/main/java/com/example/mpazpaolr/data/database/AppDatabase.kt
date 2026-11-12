@@ -20,7 +20,7 @@ abstract class AppDatabase : RoomDatabase() {
 
     abstract fun panolDao(): PanolDao
 
-    companion object {          // patrón singleton
+    companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 

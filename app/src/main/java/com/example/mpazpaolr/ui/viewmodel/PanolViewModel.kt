@@ -16,7 +16,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-// Catálogo, filtros y carrito. Se comparte entre las pantallas de la sesión.
 class PanolViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = PanolRepository.getRepository(application)
@@ -54,7 +53,6 @@ class PanolViewModel(application: Application) : AndroidViewModel(application) {
     fun cantidadEnCarrito(equipoId: Int): Int =
         carrito.firstOrNull { it.equipoId == equipoId }?.cantidad ?: 0
 
-    // Devuelve un mensaje de error, o null si se agregó correctamente.
     fun agregarAlCarrito(equipo: EquipoEntity): String? {
         if (!equipo.reservable) return "${equipo.nombre} no está disponible."
         val actual = cantidadEnCarrito(equipo.id)
