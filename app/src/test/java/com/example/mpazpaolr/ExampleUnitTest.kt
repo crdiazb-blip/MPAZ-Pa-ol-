@@ -17,6 +17,15 @@ class ValidacionesTest {
     }
 
     @Test
+    fun rut_validaDigitoVerificador() {
+        assertNull(Validaciones.rut("12.345.678-5"))
+        assertNull(Validaciones.rut("123456785"))
+        assertNotNull(Validaciones.rut("12.345.678-9"))
+        assertNotNull(Validaciones.rut(""))
+        assertNotNull(Validaciones.rut("abc"))
+    }
+
+    @Test
     fun passwordCorta_devuelveError() {
         assertNotNull(Validaciones.password("123"))
         assertNull(Validaciones.password("1234"))

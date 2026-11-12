@@ -14,8 +14,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -61,13 +61,13 @@ fun Login(
             Spacer(modifier = Modifier.height(24.dp))
 
             CampoFormulario(
-                value = state.email,
-                onValueChange = viewModel::onEmailChanged,
-                label = "Correo institucional",
-                icono = Icons.Default.Email,
-                error = state.emailError,
-                placeholder = "docente@mpaz.cl",
-                keyboardType = KeyboardType.Email
+                value = state.rut,
+                onValueChange = viewModel::onRutChanged,
+                label = "RUT",
+                icono = Icons.Default.Person,
+                error = state.rutError,
+                placeholder = "12.345.678-5",
+                keyboardType = KeyboardType.Ascii
             )
             Spacer(modifier = Modifier.height(8.dp))
             CampoFormulario(
@@ -110,7 +110,7 @@ fun Login(
 
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                "Demo: docente@mpaz.cl / 1234",
+                "Demo: 12.345.678-5 / 1234",
                 style = MaterialTheme.typography.bodySmall
             )
         }

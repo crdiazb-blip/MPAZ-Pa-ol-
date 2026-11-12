@@ -1,9 +1,9 @@
 package com.example.mpazpaolr.model
 
 data class LoginModel(
-    val email: String = "",
+    val rut: String = "",
     val password: String = "",
-    val emailError: String? = null,
+    val rutError: String? = null,
     val passwordError: String? = null,
     val errorMessage: String? = null
 )
