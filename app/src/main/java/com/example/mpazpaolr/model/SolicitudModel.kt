@@ -1,5 +1,10 @@
 package com.example.mpazpaolr.model
 
+val SALAS_DISPONIBLES = listOf(
+    "Sala 1", "Sala 2", "Sala 3", "Sala 4", "Sala 5", "Sala 6",
+    "Laboratorio", "Gimnasio"
+)
+
 data class SolicitudModel(
     val sala: String = "",
     val fecha: String = "",

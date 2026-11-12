@@ -25,12 +25,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mpazpaolr.data.device.vibrar
+import com.example.mpazpaolr.model.SALAS_DISPONIBLES
 import com.example.mpazpaolr.model.Validaciones
-import com.example.mpazpaolr.ui.components.CampoFormulario
+import com.example.mpazpaolr.ui.components.CampoFecha
+import com.example.mpazpaolr.ui.components.CampoHora
+import com.example.mpazpaolr.ui.components.CampoLista
 import com.example.mpazpaolr.ui.components.Footer
 import com.example.mpazpaolr.ui.components.Header
 import com.example.mpazpaolr.ui.viewmodel.PanolViewModel
@@ -63,37 +65,34 @@ fun Solicitud(
             )
             Spacer(modifier = Modifier.height(12.dp))
 
-            CampoFormulario(
+            CampoLista(
                 value = state.sala,
-                onValueChange = viewModel::onSalaChanged,
+                onSeleccion = viewModel::onSalaChanged,
+                opciones = SALAS_DISPONIBLES,
                 label = "Sala o espacio de uso",
                 icono = Icons.Default.Place,
                 error = state.salaError
             )
-            CampoFormulario(
+            CampoFecha(
                 value = state.fecha,
-                onValueChange = viewModel::onFechaChanged,
+                onSeleccion = viewModel::onFechaChanged,
                 label = "Fecha de uso",
                 icono = Icons.Default.DateRange,
-                error = state.fechaError,
-                placeholder = "dd/MM/aaaa",
-                keyboardType = KeyboardType.Number
+                error = state.fechaError
             )
-            CampoFormulario(
+            CampoHora(
                 value = state.horaInicio,
-                onValueChange = viewModel::onHoraInicioChanged,
+                onSeleccion = viewModel::onHoraInicioChanged,
                 label = "Hora de inicio",
                 icono = Icons.Default.Notifications,
-                error = state.horaInicioError,
-                placeholder = "HH:mm"
+                error = state.horaInicioError
             )
-            CampoFormulario(
+            CampoHora(
                 value = state.horaDevolucion,
-                onValueChange = viewModel::onHoraDevolucionChanged,
+                onSeleccion = viewModel::onHoraDevolucionChanged,
                 label = "Hora estimada de devolución",
                 icono = Icons.Default.Notifications,
-                error = state.horaDevolucionError,
-                placeholder = "HH:mm"
+                error = state.horaDevolucionError
             )
 
             AnimatedVisibility(

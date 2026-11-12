@@ -3,7 +3,6 @@ package com.example.mpazpaolr.model
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-// Reglas de validación puras (sin Android), usadas por los ViewModel.
 object Validaciones {
 
     const val ANTICIPACION_HORAS = 3
@@ -18,6 +17,31 @@ object Validaciones {
         else -> null
     }
 
+    fun normalizarRut(valor: String): String =
+        valor.filter { it.isDigit() || it == 'k' || it == 'K' }.uppercase()
+
+    fun rut(valor: String): String? {
+        val limpio = normalizarRut(valor)
+        if (valor.isBlank()) return "Ingresa tu RUT."
+        if (limpio.length < 2) return "El RUT es muy corto."
+        val cuerpo = limpio.dropLast(1)
+        val dv = limpio.last()
+        if (!cuerpo.all { it.isDigit() } || cuerpo.length > 8) return "El formato del RUT no es válido."
+        var suma = 0
+        var factor = 2
+        for (c in cuerpo.reversed()) {
+            suma += (c - '0') * factor
+            factor = if (factor == 7) 2 else factor + 1
+        }
+        val resto = 11 - suma % 11
+        val esperado = when (resto) {
+            11 -> '0'
+            10 -> 'K'
+            else -> '0' + resto
+        }
+        return if (dv == esperado) null else "El RUT no es válido (dígito verificador)."
+    }
+
     fun password(valor: String): String? = when {
         valor.isBlank() -> "Ingresa tu contraseña."
         valor.length < 4 -> "Debe tener al menos 4 caracteres."
@@ -25,8 +49,8 @@ object Validaciones {
     }
 
     fun sala(valor: String): String? = when {
-        valor.isBlank() -> "Indica la sala o espacio de uso."
-        valor.trim().length < 2 -> "El nombre de la sala es muy corto."
+        valor.isBlank() -> "Selecciona la sala o espacio de uso."
+        valor !in SALAS_DISPONIBLES -> "Selecciona una sala de la lista."
         else -> null
     }
 
@@ -44,14 +68,12 @@ object Validaciones {
         else -> null
     }
 
-    // La hora de devolución debe ser posterior a la hora de inicio (formato HH:mm).
     fun rangoHoras(inicio: String, devolucion: String): String? {
         val ini = parsear("01/01/2030", inicio.trim()) ?: return null
         val fin = parsear("01/01/2030", devolucion.trim()) ?: return null
         return if (fin <= ini) "Debe ser posterior a la hora de inicio." else null
     }
 
-    // Regla crítica: la solicitud se hace con al menos 3 horas de anticipación.
     fun anticipacion(fecha: String, horaInicio: String, ahoraMillis: Long): String? {
         val inicio = parsear(fecha.trim(), horaInicio.trim()) ?: return null
         val minimo = ahoraMillis + ANTICIPACION_HORAS * 60L * 60L * 1000L
