@@ -1,12 +1,6 @@
 package com.example.mpazpaolr.ui.screen
 
-import android.Manifest
-import android.content.Intent
-import android.location.Location
-import android.net.Uri
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
@@ -39,20 +33,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.mpazpaolr.data.device.cambiarLinterna
 import com.example.mpazpaolr.data.device.leerBateria
-import com.example.mpazpaolr.data.device.obtenerUbicacion
-import com.example.mpazpaolr.data.device.tieneLinterna
-import com.example.mpazpaolr.data.device.tienePermisoUbicacion
 import com.example.mpazpaolr.data.device.vibrar
-import androidx.compose.material.icons.filled.Place
 import com.example.mpazpaolr.data.local.entity.EquipoEntity
 import com.example.mpazpaolr.data.repository.AuthRepository
 import com.example.mpazpaolr.model.Categoria
@@ -60,6 +48,10 @@ import com.example.mpazpaolr.ui.components.Footer
 import com.example.mpazpaolr.ui.components.Header
 import com.example.mpazpaolr.ui.viewmodel.PanolViewModel
 
+/**
+ * Catálogo del perfil Solicitante.
+ * Recursos nativos de este perfil: vibración (confirmaciones y errores) y nivel de batería.
+ */
 @Composable
 fun Principal(
     viewModel: PanolViewModel,
@@ -71,26 +63,6 @@ fun Principal(
     val equipos by viewModel.equipos.collectAsState()
     val visibles = viewModel.filtrar(equipos)
     var bateria by remember { mutableIntStateOf(-1) }
-
-    var linternaEncendida by remember { mutableStateOf(false) }
-    var ubicacion by remember { mutableStateOf<Location?>(null) }
-    var buscandoUbicacion by remember { mutableStateOf(false) }
-
-    val buscarUbicacion = {
-        buscandoUbicacion = true
-        obtenerUbicacion(context) { resultado ->
-            buscandoUbicacion = false
-            if (resultado != null) {
-                ubicacion = resultado
-            } else {
-                Toast.makeText(context, "No se pudo obtener la ubicación. Activa el GPS.", Toast.LENGTH_LONG).show()
-            }
-        }
-    }
-    val permisoUbicacion = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedido ->
-        if (concedido) buscarUbicacion()
-        else Toast.makeText(context, "Permiso de ubicación denegado", Toast.LENGTH_SHORT).show()
-    }
 
     LaunchedEffect(Unit) {
         bateria = leerBateria(context)
@@ -151,55 +123,6 @@ fun Principal(
                 OutlinedButton(onClick = onIrSolicitudes, modifier = Modifier.weight(1f)) {
                     Icon(Icons.Default.List, contentDescription = null)
                     Text("  Mis solicitudes")
-                }
-            }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(
-                    onClick = {
-                        if (!tieneLinterna(context)) {
-                            Toast.makeText(context, "Este dispositivo no tiene linterna", Toast.LENGTH_SHORT).show()
-                        } else if (cambiarLinterna(context, !linternaEncendida)) {
-                            linternaEncendida = !linternaEncendida
-                        } else {
-                            Toast.makeText(context, "No se pudo usar la linterna", Toast.LENGTH_SHORT).show()
-                        }
-                    },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Linterna: ${if (linternaEncendida) "ON" else "OFF"}")
-                }
-                OutlinedButton(
-                    onClick = {
-                        if (tienePermisoUbicacion(context)) buscarUbicacion() else permisoUbicacion.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-                    },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.Place, contentDescription = null)
-                    Text(" Mi ubicación")
-                }
-            }
-            if (buscandoUbicacion || ubicacion != null) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        if (buscandoUbicacion) "Buscando señal GPS…"
-                        else "Lat: %.5f, Lon: %.5f".format(ubicacion!!.latitude, ubicacion!!.longitude),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    if (!buscandoUbicacion) {
-                        TextButton(onClick = {
-                            val uri = Uri.parse("geo:${ubicacion!!.latitude},${ubicacion!!.longitude}?q=${ubicacion!!.latitude},${ubicacion!!.longitude}(Mi ubicación)")
-                            try {
-                                context.startActivity(Intent(Intent.ACTION_VIEW, uri))
-                            } catch (e: Exception) {
-                                Toast.makeText(context, "No hay app de mapas instalada", Toast.LENGTH_SHORT).show()
-                            }
-                        }) { Text("Ver en mapa") }
-                    }
                 }
             }
 

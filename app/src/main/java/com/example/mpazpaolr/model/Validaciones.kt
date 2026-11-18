@@ -48,6 +48,34 @@ object Validaciones {
         else -> null
     }
 
+    fun textoObligatorio(valor: String, campo: String, maximo: Int = 120): String? = when {
+        valor.isBlank() -> "Ingresa $campo."
+        valor.trim().length > maximo -> "Máximo $maximo caracteres."
+        else -> null
+    }
+
+    const val STOCK_MAXIMO = 9999
+
+    fun stock(valor: String): String? {
+        if (valor.isBlank()) return "Ingresa el stock total."
+        val numero = valor.trim().toIntOrNull() ?: return "El stock debe ser un número entero."
+        return when {
+            numero < 0 -> "El stock no puede ser negativo."
+            numero > STOCK_MAXIMO -> "El stock máximo es $STOCK_MAXIMO."
+            else -> null
+        }
+    }
+
+    fun categoria(valor: String): String? =
+        if (Categoria.entries.any { it.label == valor }) null else "Selecciona una categoría."
+
+    fun justificacionRechazo(valor: String): String? = when {
+        valor.isBlank() -> "La justificación del rechazo es obligatoria."
+        valor.trim().length < 5 -> "Explica el motivo con al menos 5 caracteres."
+        valor.trim().length > 500 -> "Máximo 500 caracteres."
+        else -> null
+    }
+
     fun sala(valor: String): String? = when {
         valor.isBlank() -> "Selecciona la sala o espacio de uso."
         valor !in SALAS_DISPONIBLES -> "Selecciona una sala de la lista."
