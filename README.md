@@ -1,53 +1,94 @@
 # MPAZ Pañol
 
-App móvil Android (MVP académico) para consultar el catálogo de equipos tecnológicos de la Escuela Escritora Marcela Paz, armar un carrito y enviar solicitudes de reserva. Asignatura DSY1105 - Desarrollo de Aplicaciones Móviles (Evaluación Parcial 2).
+Sistema móvil de inventario, reserva y préstamo de equipos tecnológicos de la Escuela Escritora Marcela Paz.
+Asignatura DSY1105 - Desarrollo de Aplicaciones Móviles (Experiencia 3).
 
-**Integrantes:** _(completar nombres de la pareja)_
+- **App Android** (esta carpeta): Kotlin, Jetpack Compose, Material Design 3, MVVM, Room, Retrofit.
+- **Backend** ([`backend/`](backend/README.md)): 6 microservicios Spring Boot, PostgreSQL en Supabase, un contenedor Docker por servicio.
 
-## Alcance de esta versión
+**Integrantes:** crdiazb-blip y francisscaorregoo-gif _(completar nombres completos)_
 
-- Un solo perfil de usuario: **Solicitante** (docente). No hay registro ni base de datos de usuarios.
-  Credenciales de demostración: `docente@mpaz.cl` / `1234`.
-- Todos los datos son ficticios.
+Todos los datos son ficticios (Ley 19.628 y Ley 21.719).
+
+## Perfiles de usuario
+
+| Perfil | Cuenta de prueba | Qué puede hacer |
+|---|---|---|
+| **Solicitante** (Docente, Inspector, UTP, Directivo) | `12.345.678-5` / `1234` | Ver el catálogo con filtros, armar el carrito, enviar solicitudes (regla de 3 horas de anticipación), seguir su estado, leer justificaciones de rechazo y notificaciones. |
+| **Administrador** (Encargado TI) | `11.111.111-1` / `admin123` | Gestionar el inventario (alta, edición, estado, stock, ubicación, baja), aceptar o rechazar solicitudes con justificación obligatoria, registrar entrega y devolución, ver la bitácora. |
+
+Cada perfil tiene su propia navegación: si una pantalla no corresponde al perfil de la sesión, se vuelve al login.
 
 ## Funcionalidades
 
-- Login con validación por campo (íconos y mensajes de error).
-- Catálogo con filtros por categoría y "solo disponibles".
-- Carrito de solicitudes (sumar, restar, quitar).
-- Formulario de solicitud: sala, fecha, hora de inicio y hora de devolución. Valida formato, rango horario y la regla de **3 horas de anticipación**.
-- Seguimiento de solicitudes con estado y justificación de rechazo.
-- Persistencia local con Room (SQLite): equipos y solicitudes.
-- Recursos nativos: **vibración** (confirmaciones y errores) y **nivel de batería**.
-- Animaciones: cambio de color por estado, expansión de tarjetas, aparición de mensajes de error.
+- **Login y logout** contra el microservicio de autenticación (JWT). La sesión y el usuario se guardan en SQLite (Room): al reabrir la app la sesión se restaura, y quien ya inició sesión puede volver a entrar sin conexión (la clave se guarda solo como hash con sal).
+- Formularios validados por campo, con ícono y mensaje de error (login, solicitud, alta y edición de equipos, rechazo).
+- Catálogo y solicitudes guardados en Room: la app sigue mostrando los últimos datos descargados sin conexión.
+- Recursos nativos por perfil: **Solicitante** → vibración y nivel de batería. **Administrador** → linterna y ubicación GPS.
+- Animaciones: cambio de color por estado, expansión de tarjetas, aparición de mensajes de error, indicadores de carga.
+- Pruebas unitarias: JUnit en la app (validaciones, hash, mapeos) y JUnit + Mockito en cada microservicio.
 
-## Arquitectura (MVVM)
+## Arquitectura
+
+```
+App Android (MVVM) ──Retrofit──▶ api-gateway :8080 ──▶ auth-service         (usuarios, login/logout, JWT)
+                                                   ├─▶ inventory-service    (equipos, stock, estado)
+                                                   ├─▶ request-service      (solicitudes, regla de 3 horas)
+                                                   ├─▶ audit-service        (bitácora de trazabilidad)
+                                                   └─▶ notification-service (recordatorios de devolución)
+                                                        │
+                                                        └──▶ PostgreSQL (Supabase)
+```
+
+Estructura de la app:
 
 ```
 com.example.mpazpaolr
 ├── data
-│   ├── database/   AppDatabase, Converters
-│   ├── local/      dao/PanolDao, entity/*
-│   ├── repository/ PanolRepository, AuthRepository
-│   └── device/     Vibracion, Bateria (recursos nativos)
-├── model/          Enums, estados de formulario y Validaciones (lógica pura)
+│   ├── database/    AppDatabase, Converters (Room)
+│   ├── local/       dao/ (PanolDao, AuthDao), entity/ (equipos, solicitudes, usuarios, sesión)
+│   ├── remote/      api/ (interfaces Retrofit), dto/, RetrofitClient, ApiResult, Mappers
+│   ├── repository/  Auth, Panol, Inventario y GestionSolicitudes (única fuente de datos)
+│   ├── security/    PasswordHasher
+│   └── device/      Vibracion, Bateria, Linterna, Ubicacion (recursos nativos)
+├── model/           Enums, Rol, Perfil, estados de formularios y Validaciones (lógica pura)
 ├── ui
-│   ├── components/ Header, Footer, CampoFormulario
-│   ├── navigation/ AppNavigation
-│   ├── screen/     Login, Principal, Carrito, Solicitud, MisSolicitudes
+│   ├── components/  Header, Footer, CampoFormulario, selectores
+│   ├── navigation/  AppNavigation (rutas por perfil)
+│   ├── screen/      Login, Principal, Carrito, Solicitud, MisSolicitudes, Admin*
 │   ├── theme/
-│   └── viewmodel/  LoginViewModel, PanolViewModel, SolicitudViewModel
+│   └── viewmodel/   Login, Panol, Solicitud, Inventario y GestionSolicitudes
 └── MainActivity.kt
 ```
 
-Las validaciones viven en `model/Validaciones.kt` y se prueban con tests unitarios (`ValidacionesTest`).
-
 ## Cómo ejecutar
 
+### 1. Backend
+
+```bash
+cd backend
+cp .env.example .env        # completar con los datos de Supabase y el JWT_SECRET
+docker compose up -d --build
+```
+
+Detalles de Supabase, endpoints y pruebas en [`backend/README.md`](backend/README.md).
+
+### 2. App Android
+
 1. Abrir la carpeta en Android Studio (JDK 17 o superior).
-2. Sincronizar Gradle y ejecutar en un emulador o dispositivo Android (minSdk 23).
-3. Tests: `./gradlew testDebugUnitTest`
+2. En el emulador, la app usa `http://10.0.2.2:8080/` (el `localhost` de tu PC). Para un teléfono físico o un
+   servidor en la nube, compilar con otra URL: `./gradlew assembleDebug -PAPI_BASE_URL=http://IP-DEL-SERVIDOR:8080/`
+3. Ejecutar en un emulador o dispositivo Android (minSdk 23).
+4. Tests: `./gradlew testDebugUnitTest`
 
-## Stack
+> El tráfico HTTP sin cifrar (`usesCleartextTraffic`) está habilitado solo para desarrollo.
+> En producción el gateway debe publicarse con HTTPS.
 
-Kotlin, Jetpack Compose, Material Design 3, MVVM, Room, Navigation Compose.
+## Reparto del trabajo
+
+El historial de Git muestra los aportes de cada integrante. Resumen:
+
+| Integrante | Backend | Android |
+|---|---|---|
+| crdiazb-blip | estructura y Docker, inventory-service, request-service, api-gateway | autenticación con Room, navegación por rol, gestión de inventario |
+| francisscaorregoo-gif | auth-service, audit-service, notification-service | capa Retrofit, sincronización con Room, consola de solicitudes del administrador |
