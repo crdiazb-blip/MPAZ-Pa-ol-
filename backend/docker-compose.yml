@@ -45,5 +45,18 @@ services:
       retries: 12
       start_period: 40s
 
+  inventory-service:
+    build: ./inventory-service
+    container_name: panol-inventory-service
+    restart: unless-stopped
+    environment:
+      <<: *service-env
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/actuator/health | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
 volumes:
   postgres_local_data:
