@@ -4,6 +4,7 @@ import androidx.room.TypeConverter
 import com.example.mpazpaolr.model.Categoria
 import com.example.mpazpaolr.model.EstadoEquipo
 import com.example.mpazpaolr.model.EstadoSolicitud
+import com.example.mpazpaolr.model.Rol
 
 class Converters {
     @TypeConverter
@@ -23,4 +24,10 @@ class Converters {
 
     @TypeConverter
     fun stringToEstadoSolicitud(valor: String): EstadoSolicitud = EstadoSolicitud.valueOf(valor)
+
+    @TypeConverter
+    fun rolToString(valor: Rol): String = valor.name
+
+    @TypeConverter
+    fun stringToRol(valor: String): Rol = Rol.valueOf(valor)
 }

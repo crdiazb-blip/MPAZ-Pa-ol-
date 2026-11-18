@@ -13,10 +13,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -30,12 +32,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mpazpaolr.data.device.vibrar
 import com.example.mpazpaolr.ui.components.CampoFormulario
 import com.example.mpazpaolr.ui.components.Footer
+import com.example.mpazpaolr.model.Perfil
 import com.example.mpazpaolr.ui.components.Header
 import com.example.mpazpaolr.ui.viewmodel.LoginViewModel
 
 @Composable
 fun Login(
-    onLoginSuccess: () -> Unit,
+    onLoginSuccess: (Perfil) -> Unit,
     viewModel: LoginViewModel = viewModel()
 ) {
     val state = viewModel.uiState
@@ -96,21 +99,41 @@ fun Login(
             Spacer(modifier = Modifier.height(24.dp))
             Button(
                 onClick = {
-                    if (viewModel.onLoginClick()) {
-                        Toast.makeText(context, "¡Bienvenido/a!", Toast.LENGTH_SHORT).show()
-                        onLoginSuccess()
-                    } else {
-                        vibrar(context)
-                    }
+                    viewModel.onLoginClick(
+                        onSuccess = { perfil, sinConexion ->
+                            val mensaje = if (sinConexion) "Sesión sin conexión (datos locales)" else "¡Bienvenido/a!"
+                            Toast.makeText(context, mensaje, Toast.LENGTH_SHORT).show()
+                            onLoginSuccess(perfil)
+                        },
+                        onError = { vibrar(context) }
+                    )
                 },
+                enabled = !state.cargando,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Ingresar")
+                if (state.cargando) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Text("  Ingresando…")
+                } else {
+                    Text("Ingresar")
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                "Demo: 12.345.678-5 / 1234",
+                "Cuentas de prueba (datos ficticios)",
+                style = MaterialTheme.typography.labelMedium
+            )
+            Text(
+                "Solicitante: 12.345.678-5 / 1234",
+                style = MaterialTheme.typography.bodySmall
+            )
+            Text(
+                "Administrador: 11.111.111-1 / admin123",
                 style = MaterialTheme.typography.bodySmall
             )
         }

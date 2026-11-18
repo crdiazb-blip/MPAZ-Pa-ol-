@@ -5,20 +5,31 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.example.mpazpaolr.data.local.dao.AuthDao
 import com.example.mpazpaolr.data.local.dao.PanolDao
 import com.example.mpazpaolr.data.local.entity.EquipoEntity
+import com.example.mpazpaolr.data.local.entity.SesionEntity
 import com.example.mpazpaolr.data.local.entity.SolicitudEntity
 import com.example.mpazpaolr.data.local.entity.SolicitudItemEntity
+import com.example.mpazpaolr.data.local.entity.UsuarioLocalEntity
 
 @Database(
-    entities = [EquipoEntity::class, SolicitudEntity::class, SolicitudItemEntity::class],
-    version = 1,
+    entities = [
+        EquipoEntity::class,
+        SolicitudEntity::class,
+        SolicitudItemEntity::class,
+        UsuarioLocalEntity::class,
+        SesionEntity::class
+    ],
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun panolDao(): PanolDao
+
+    abstract fun authDao(): AuthDao
 
     companion object {
         @Volatile
@@ -30,7 +41,10 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "mpaz_panol.db"
-                ).build()
+                )
+                    // Los datos locales son una caché del servidor: si cambia el esquema, se vuelve a sincronizar.
+                    .fallbackToDestructiveMigration(dropAllTables = true)
+                    .build()
                 INSTANCE = instance
                 instance
             }

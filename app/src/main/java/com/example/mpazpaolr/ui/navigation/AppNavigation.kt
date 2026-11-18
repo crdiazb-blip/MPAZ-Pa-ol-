@@ -5,12 +5,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.mpazpaolr.data.repository.AuthRepository
 import com.example.mpazpaolr.ui.screen.Carrito
 import com.example.mpazpaolr.ui.screen.Login
 import com.example.mpazpaolr.ui.screen.MisSolicitudes
 import com.example.mpazpaolr.ui.screen.Principal
 import com.example.mpazpaolr.ui.screen.Solicitud
+import com.example.mpazpaolr.ui.viewmodel.LoginViewModel
 import com.example.mpazpaolr.ui.viewmodel.PanolViewModel
 
 object Routes {
@@ -25,6 +25,7 @@ object Routes {
 fun AppNavigation() {
     val navController = rememberNavController()
     val panolViewModel: PanolViewModel = viewModel()
+    val loginViewModel: LoginViewModel = viewModel()
 
     NavHost(
         navController = navController,
@@ -32,6 +33,7 @@ fun AppNavigation() {
     ) {
         composable(Routes.LOGIN) {
             Login(
+                viewModel = loginViewModel,
                 onLoginSuccess = {
                     navController.navigate(Routes.PRINCIPAL) {
                         popUpTo(Routes.LOGIN) { inclusive = true }
@@ -46,10 +48,11 @@ fun AppNavigation() {
                 onIrCarrito = { navController.navigate(Routes.CARRITO) },
                 onIrSolicitudes = { navController.navigate(Routes.MIS_SOLICITUDES) },
                 onCerrarSesion = {
-                    AuthRepository.cerrarSesion()
                     panolViewModel.vaciarCarrito()
-                    navController.navigate(Routes.LOGIN) {
-                        popUpTo(Routes.PRINCIPAL) { inclusive = true }
+                    loginViewModel.cerrarSesion {
+                        navController.navigate(Routes.LOGIN) {
+                            popUpTo(Routes.PRINCIPAL) { inclusive = true }
+                        }
                     }
                 }
             )

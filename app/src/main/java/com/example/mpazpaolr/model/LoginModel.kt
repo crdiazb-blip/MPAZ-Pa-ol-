@@ -5,5 +5,6 @@ data class LoginModel(
     val password: String = "",
     val rutError: String? = null,
     val passwordError: String? = null,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val cargando: Boolean = false
 )
