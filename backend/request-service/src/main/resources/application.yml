@@ -1,0 +1,42 @@
+server:
+  port: ${SERVER_PORT:8083}
+
+spring:
+  application:
+    name: request-service
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 3
+      minimum-idle: 1
+  sql:
+    init:
+      mode: always
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        default_schema: panol_solicitudes
+
+# Direcciones de los otros microservicios (nombres de servicio de docker compose)
+services:
+  inventory:
+    url: ${INVENTORY_SERVICE_URL:http://inventory-service:8082}
+  audit:
+    url: ${AUDIT_SERVICE_URL:http://audit-service:8084}
+  notification:
+    url: ${NOTIFICATION_SERVICE_URL:http://notification-service:8085}
+
+panol:
+  zona-horaria: America/Santiago
+  anticipacion-horas: 3
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
