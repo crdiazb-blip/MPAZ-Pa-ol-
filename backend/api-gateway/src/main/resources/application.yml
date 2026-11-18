@@ -1,0 +1,22 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: api-gateway
+
+# Direcciones de los microservicios (nombres de servicio de docker compose)
+gateway:
+  rutas:
+    auth: ${AUTH_SERVICE_URL:http://auth-service:8081}
+    usuarios: ${AUTH_SERVICE_URL:http://auth-service:8081}
+    equipos: ${INVENTORY_SERVICE_URL:http://inventory-service:8082}
+    solicitudes: ${REQUEST_SERVICE_URL:http://request-service:8083}
+    bitacora: ${AUDIT_SERVICE_URL:http://audit-service:8084}
+    notificaciones: ${NOTIFICATION_SERVICE_URL:http://notification-service:8085}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

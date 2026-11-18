@@ -38,6 +38,41 @@ Para probar sin Supabase (Postgres local en un contenedor), usar en `.env` los v
 docker compose --profile local up -d --build
 ```
 
+## Cuentas de prueba (datos ficticios)
+
+| Perfil | RUT | Contraseña |
+|---|---|---|
+| Administrador (Encargado TI) | 11.111.111-1 | admin123 |
+| Solicitante (Docente) | 12.345.678-5 | 1234 |
+| Solicitante (Inspector) | 22.222.222-2 | 1234 |
+| Solicitante (UTP) | 13.579.246-2 | 1234 |
+
+## Endpoints (todos pasan por el gateway, prefijo `/api`)
+
+| Método y ruta | Perfil | Descripción |
+|---|---|---|
+| `POST /api/auth/login` | público | Inicia sesión y entrega el token JWT. |
+| `POST /api/auth/logout` | autenticado | Cierra la sesión (el token queda invalidado). |
+| `GET /api/equipos` | ambos | Catálogo con stock y estado. |
+| `POST/PUT/PATCH/DELETE /api/equipos...` | ADMIN | Altas, ediciones, estado, stock y baja. |
+| `POST /api/solicitudes` | SOLICITANTE | Crea la solicitud (valida las 3 horas de anticipación y el stock). |
+| `GET /api/solicitudes` | ambos | ADMIN ve todas; SOLICITANTE solo las suyas. |
+| `PATCH /api/solicitudes/{id}/aceptar \| rechazar \| entregar \| devolver \| finalizar` | ADMIN | Flujo logístico (el rechazo exige justificación). |
+| `GET /api/bitacora?solicitudId=` | ambos | Trazabilidad de cada solicitud. |
+| `GET /api/notificaciones` | ambos | Notificaciones internas y recordatorios de devolución. |
+
+El gateway valida el token en cada petición y entrega la identidad a los microservicios en las cabeceras
+`X-User-*`. Las rutas `/internal/**` (comunicación entre servicios) nunca se exponen.
+
+## Probar todo el flujo
+
+Con el backend levantado, el script recorre login, roles, regla de 3 horas, stock, flujo de estados,
+bitácora, notificaciones y logout:
+
+```bash
+bash scripts/probar-api.sh            # usa http://localhost:8080
+```
+
 ## Pruebas unitarias (JUnit)
 
 Cada servicio incluye pruebas JUnit 5 + Mockito. Sin instalar Maven, usando Docker:
