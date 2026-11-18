@@ -27,6 +27,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -91,7 +92,10 @@ fun Principal(
         else Toast.makeText(context, "Permiso de ubicación denegado", Toast.LENGTH_SHORT).show()
     }
 
-    LaunchedEffect(Unit) { bateria = leerBateria(context) }
+    LaunchedEffect(Unit) {
+        bateria = leerBateria(context)
+        viewModel.sincronizar()
+    }
 
     Scaffold(
         topBar = { Header("CATÁLOGO DE EQUIPOS") },
@@ -118,6 +122,25 @@ fun Principal(
                     )
                 }
                 TextButton(onClick = onCerrarSesion) { Text("Salir") }
+            }
+
+            if (viewModel.cargando) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
+            viewModel.mensajeError?.let { mensaje ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        mensaje,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(onClick = viewModel::sincronizar) { Text("Reintentar") }
+                }
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -215,7 +238,12 @@ fun Principal(
                     )
                 }
                 if (visibles.isEmpty()) {
-                    item { Text("No hay equipos con esos filtros.") }
+                    item {
+                        Text(
+                            if (equipos.isEmpty()) "Aún no hay equipos descargados. Revisa tu conexión y reintenta."
+                            else "No hay equipos con esos filtros."
+                        )
+                    }
                 }
             }
         }

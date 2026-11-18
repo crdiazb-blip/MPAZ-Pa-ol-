@@ -5,14 +5,23 @@ import androidx.room.withTransaction
 import com.example.mpazpaolr.data.database.AppDatabase
 import com.example.mpazpaolr.data.local.entity.EquipoEntity
 import com.example.mpazpaolr.data.local.entity.SolicitudConItems
-import com.example.mpazpaolr.data.local.entity.SolicitudEntity
-import com.example.mpazpaolr.data.local.entity.SolicitudItemEntity
-import com.example.mpazpaolr.model.Categoria
+import com.example.mpazpaolr.data.remote.ApiResult
+import com.example.mpazpaolr.data.remote.RetrofitClient
+import com.example.mpazpaolr.data.remote.aEntity
+import com.example.mpazpaolr.data.remote.dto.ItemSolicitudRequestDto
+import com.example.mpazpaolr.data.remote.dto.NotificacionDto
+import com.example.mpazpaolr.data.remote.dto.SolicitudDto
+import com.example.mpazpaolr.data.remote.dto.SolicitudRequestDto
+import com.example.mpazpaolr.data.remote.itemsAEntity
+import com.example.mpazpaolr.data.remote.llamarApi
 import com.example.mpazpaolr.model.CarritoItem
-import com.example.mpazpaolr.model.EstadoEquipo
-import com.example.mpazpaolr.model.EstadoSolicitud
+import com.example.mpazpaolr.model.FormatoFecha
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * Fuente única de datos de equipos y solicitudes. La UI siempre lee de Room (funciona sin conexión);
+ * las funciones "sincronizar" y las operaciones llaman a los microservicios y actualizan esa copia local.
+ */
 class PanolRepository private constructor(private val db: AppDatabase) {
 
     private val dao = db.panolDao()
@@ -20,78 +29,80 @@ class PanolRepository private constructor(private val db: AppDatabase) {
     val equipos: Flow<List<EquipoEntity>> = dao.observarEquipos()
     val solicitudes: Flow<List<SolicitudConItems>> = dao.observarSolicitudes()
 
-    suspend fun cargarDatosIniciales() {
-        if (dao.contarEquipos() == 0) dao.insertarEquipos(catalogoFicticio())
-        if (dao.contarSolicitudes() == 0) cargarSolicitudesDeEjemplo()
+    /** Descarga el catálogo del inventory-service y reemplaza la copia local. */
+    suspend fun sincronizarEquipos(): ApiResult<Unit> {
+        return when (val resultado = llamarApi { RetrofitClient.equipoApi.listar() }) {
+            is ApiResult.Ok -> {
+                db.withTransaction {
+                    dao.borrarEquipos()
+                    dao.insertarEquipos(resultado.valor.map { it.aEntity() })
+                }
+                ApiResult.Ok(Unit)
+            }
+            is ApiResult.Error -> resultado
+            is ApiResult.SinConexion -> resultado
+        }
     }
 
+    /** Descarga las solicitudes del usuario (o todas, si es administrador) y reemplaza la copia local. */
+    suspend fun sincronizarSolicitudes(): ApiResult<Unit> {
+        return when (val resultado = llamarApi { RetrofitClient.solicitudApi.listar() }) {
+            is ApiResult.Ok -> {
+                db.withTransaction {
+                    dao.borrarItems()
+                    dao.borrarSolicitudes()
+                    dao.insertarSolicitudes(resultado.valor.map { it.aEntity() })
+                    dao.insertarItems(resultado.valor.flatMap { it.itemsAEntity() })
+                }
+                ApiResult.Ok(Unit)
+            }
+            is ApiResult.Error -> resultado
+            is ApiResult.SinConexion -> resultado
+        }
+    }
+
+    /** Envía la solicitud al request-service. El servidor vuelve a validar la regla de 3 horas y el stock. */
     suspend fun crearSolicitud(
         sala: String,
         fecha: String,
         horaInicio: String,
         horaDevolucion: String,
         items: List<CarritoItem>
-    ) {
-        db.withTransaction {
-            val id = dao.insertarSolicitud(
-                SolicitudEntity(
-                    sala = sala.trim(),
-                    fecha = fecha.trim(),
-                    horaInicio = horaInicio.trim(),
-                    horaDevolucion = horaDevolucion.trim(),
-                    estado = EstadoSolicitud.PENDIENTE,
-                    creadaEn = System.currentTimeMillis()
-                )
-            ).toInt()
-            dao.insertarItems(
-                items.map {
-                    SolicitudItemEntity(
-                        solicitudId = id,
-                        equipoId = it.equipoId,
-                        nombreEquipo = it.nombre,
-                        cantidad = it.cantidad
-                    )
-                }
-            )
-        }
-    }
-
-    private suspend fun cargarSolicitudesDeEjemplo() {
-        val ahora = System.currentTimeMillis()
-        val ejemplos = listOf(
-            SolicitudEntity(
-                sala = "Sala 4° Básico A", fecha = "01/09/2026",
-                horaInicio = "09:00", horaDevolucion = "10:30",
-                estado = EstadoSolicitud.RECHAZADA,
-                comentarioGestion = "El proyector está en mantenimiento esa semana.",
-                creadaEn = ahora - 86_400_000L
-            ),
-            SolicitudEntity(
-                sala = "Laboratorio de Ciencias", fecha = "02/09/2026",
-                horaInicio = "11:00", horaDevolucion = "12:30",
-                estado = EstadoSolicitud.ACEPTADA,
-                creadaEn = ahora - 43_200_000L
-            )
+    ): ApiResult<SolicitudDto> {
+        val peticion = SolicitudRequestDto(
+            sala = sala.trim(),
+            fecha = FormatoFecha.displayAIso(fecha),
+            horaInicio = horaInicio.trim(),
+            horaDevolucion = horaDevolucion.trim(),
+            items = items.map { ItemSolicitudRequestDto(it.equipoId, it.cantidad) }
         )
-        ejemplos.forEachIndexed { indice, solicitud ->
-            val id = dao.insertarSolicitud(solicitud).toInt()
-            val (equipoId, nombre) = if (indice == 0) 3 to "Proyector Epson X41" else 6 to "Kit LEGO WeDo 2.0"
-            dao.insertarItems(listOf(SolicitudItemEntity(solicitudId = id, equipoId = equipoId, nombreEquipo = nombre, cantidad = 1)))
+        val resultado = llamarApi { RetrofitClient.solicitudApi.crear(peticion) }
+        if (resultado is ApiResult.Ok) guardarSolicitud(resultado.valor)
+        return resultado
+    }
+
+    /** Guarda (o reemplaza) una solicitud y sus equipos en la copia local. */
+    suspend fun guardarSolicitud(dto: SolicitudDto) {
+        db.withTransaction {
+            dao.borrarItemsDeSolicitud(dto.id)
+            dao.insertarSolicitud(dto.aEntity())
+            dao.insertarItems(dto.itemsAEntity())
         }
     }
 
-    private fun catalogoFicticio() = listOf(
-        EquipoEntity(nombre = "Notebook Lenovo V15", marca = "Lenovo", modelo = "V15", categoria = Categoria.NOTEBOOK, stockTotal = 10, stockDisponible = 7, estado = EstadoEquipo.DISPONIBLE, ubicacion = "Pañol - Estante A"),
-        EquipoEntity(nombre = "Computador de escritorio", marca = "HP", modelo = "ProDesk 400", categoria = Categoria.COMPUTADOR, stockTotal = 4, stockDisponible = 4, estado = EstadoEquipo.DISPONIBLE, ubicacion = "Pañol - Estante B"),
-        EquipoEntity(nombre = "Proyector Epson X41", marca = "Epson", modelo = "X41", categoria = Categoria.PROYECTOR, stockTotal = 3, stockDisponible = 0, estado = EstadoEquipo.MANTENIMIENTO, ubicacion = "Pañol - Estante C"),
-        EquipoEntity(nombre = "Parlante portátil", marca = "JBL", modelo = "Partybox 100", categoria = Categoria.PARLANTE, stockTotal = 2, stockDisponible = 2, estado = EstadoEquipo.DISPONIBLE, ubicacion = "Pañol - Estante C"),
-        EquipoEntity(nombre = "Alargador 5 metros", marca = "Steren", modelo = "AL-5M", categoria = Categoria.ALARGADOR, stockTotal = 12, stockDisponible = 9, estado = EstadoEquipo.DISPONIBLE, ubicacion = "Pañol - Cajón 1"),
-        EquipoEntity(nombre = "Kit LEGO WeDo 2.0", marca = "LEGO", modelo = "WeDo 2.0", categoria = Categoria.ROBOTICA, stockTotal = 6, stockDisponible = 5, estado = EstadoEquipo.DISPONIBLE, ubicacion = "Pañol - Estante D"),
-        EquipoEntity(nombre = "Placa Arduino UNO", marca = "Arduino", modelo = "UNO R3", categoria = Categoria.ROBOTICA, stockTotal = 8, stockDisponible = 8, estado = EstadoEquipo.DISPONIBLE, ubicacion = "Pañol - Estante D"),
-        EquipoEntity(nombre = "Placa ESP32", marca = "Espressif", modelo = "DevKit V1", categoria = Categoria.ROBOTICA, stockTotal = 5, stockDisponible = 1, estado = EstadoEquipo.DISPONIBLE, ubicacion = "Pañol - Estante D"),
-        EquipoEntity(nombre = "Switch de red 24 puertos", marca = "TP-Link", modelo = "TL-SG1024", categoria = Categoria.RED, stockTotal = 1, stockDisponible = 0, estado = EstadoEquipo.PRESTADO, ubicacion = "Sala de servidores (fija)"),
-        EquipoEntity(nombre = "Router WiFi", marca = "Mikrotik", modelo = "hAP ac2", categoria = Categoria.RED, stockTotal = 1, stockDisponible = 0, estado = EstadoEquipo.FUERA_DE_SERVICIO, ubicacion = "Biblioteca (fija)")
-    )
+    /** Al cerrar sesión se borran las solicitudes guardadas para no dejar datos de otra persona en el teléfono. */
+    suspend fun limpiarSolicitudes() {
+        db.withTransaction {
+            dao.borrarItems()
+            dao.borrarSolicitudes()
+        }
+    }
+
+    suspend fun notificaciones(): ApiResult<List<NotificacionDto>> =
+        llamarApi { RetrofitClient.notificacionApi.listar() }
+
+    suspend fun marcarNotificacionLeida(id: Long): ApiResult<NotificacionDto> =
+        llamarApi { RetrofitClient.notificacionApi.marcarLeida(id) }
 
     companion object {
         @Volatile

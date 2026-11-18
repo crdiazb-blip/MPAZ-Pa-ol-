@@ -14,5 +14,6 @@ data class SolicitudModel(
     val fechaError: String? = null,
     val horaInicioError: String? = null,
     val horaDevolucionError: String? = null,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val enviando: Boolean = false
 )

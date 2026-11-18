@@ -127,9 +127,10 @@ fun Solicitud(
                         onError = { vibrar(context) }
                     )
                 },
+                enabled = !state.enviando,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Enviar solicitud")
+                Text(if (state.enviando) "Enviando…" else "Enviar solicitud")
             }
         }
     }

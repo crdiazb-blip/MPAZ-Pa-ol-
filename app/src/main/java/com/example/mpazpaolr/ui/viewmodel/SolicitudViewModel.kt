@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mpazpaolr.data.remote.ApiResult
 import com.example.mpazpaolr.data.repository.PanolRepository
 import com.example.mpazpaolr.model.CarritoItem
 import com.example.mpazpaolr.model.SolicitudModel
@@ -78,12 +79,20 @@ class SolicitudViewModel(application: Application) : AndroidViewModel(applicatio
             return
         }
 
+        if (estado.enviando) return
+        uiState = estado.copy(enviando = true, errorMessage = null)
         viewModelScope.launch {
-            repository.crearSolicitud(
+            val resultado = repository.crearSolicitud(
                 estado.sala, estado.fecha, estado.horaInicio, estado.horaDevolucion, carrito
             )
-            uiState = SolicitudModel()
-            onSuccess()
+            if (resultado is ApiResult.Ok) {
+                uiState = SolicitudModel()
+                onSuccess()
+            } else {
+                // El servidor también valida (3 horas, stock): se muestra su mensaje al usuario.
+                uiState = uiState.copy(enviando = false, errorMessage = resultado.mensajeError())
+                onError()
+            }
         }
     }
 }

@@ -48,7 +48,7 @@ fun AppNavigation() {
                 onIrCarrito = { navController.navigate(Routes.CARRITO) },
                 onIrSolicitudes = { navController.navigate(Routes.MIS_SOLICITUDES) },
                 onCerrarSesion = {
-                    panolViewModel.vaciarCarrito()
+                    panolViewModel.limpiarSesion()
                     loginViewModel.cerrarSesion {
                         navController.navigate(Routes.LOGIN) {
                             popUpTo(Routes.PRINCIPAL) { inclusive = true }

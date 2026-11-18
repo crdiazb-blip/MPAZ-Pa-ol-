@@ -8,6 +8,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mpazpaolr.data.local.entity.EquipoEntity
 import com.example.mpazpaolr.data.local.entity.SolicitudConItems
+import com.example.mpazpaolr.data.remote.dto.NotificacionDto
 import com.example.mpazpaolr.data.repository.PanolRepository
 import com.example.mpazpaolr.model.CarritoItem
 import com.example.mpazpaolr.model.Categoria
@@ -33,8 +34,48 @@ class PanolViewModel(application: Application) : AndroidViewModel(application) {
     var carrito by mutableStateOf<List<CarritoItem>>(emptyList())
         private set
 
-    init {
-        viewModelScope.launch { repository.cargarDatosIniciales() }
+    /** true mientras se descargan datos del servidor. */
+    var cargando by mutableStateOf(false)
+        private set
+
+    /** Último error de sincronización (por ejemplo, sin conexión). null si todo salió bien. */
+    var mensajeError by mutableStateOf<String?>(null)
+        private set
+
+    var notificaciones by mutableStateOf<List<NotificacionDto>>(emptyList())
+        private set
+
+    /** Descarga catálogo y solicitudes del servidor; la UI las recibe desde Room. */
+    fun sincronizar() {
+        if (cargando) return
+        viewModelScope.launch {
+            cargando = true
+            val equipos = repository.sincronizarEquipos()
+            val solicitudes = repository.sincronizarSolicitudes()
+            mensajeError = equipos.mensajeError() ?: solicitudes.mensajeError()
+            cargando = false
+        }
+    }
+
+    fun cargarNotificaciones() {
+        viewModelScope.launch {
+            notificaciones = repository.notificaciones().valorONull() ?: notificaciones
+        }
+    }
+
+    fun marcarNotificacionLeida(id: Long) {
+        viewModelScope.launch {
+            repository.marcarNotificacionLeida(id)
+            notificaciones = notificaciones.map { if (it.id == id) it.copy(leida = true) else it }
+        }
+    }
+
+    /** Se llama al cerrar sesión: vacía el carrito y las solicitudes guardadas en el teléfono. */
+    fun limpiarSesion() {
+        vaciarCarrito()
+        notificaciones = emptyList()
+        mensajeError = null
+        viewModelScope.launch { repository.limpiarSolicitudes() }
     }
 
     fun filtrar(lista: List<EquipoEntity>): List<EquipoEntity> = lista.filter { equipo ->

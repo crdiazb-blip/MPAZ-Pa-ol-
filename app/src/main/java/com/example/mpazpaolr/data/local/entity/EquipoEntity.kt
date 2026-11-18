@@ -5,13 +5,15 @@ import androidx.room.PrimaryKey
 import com.example.mpazpaolr.model.Categoria
 import com.example.mpazpaolr.model.EstadoEquipo
 
+/** Copia local del catálogo del inventory-service (el id es el del servidor). */
 @Entity(tableName = "equipos")
 data class EquipoEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
+    @PrimaryKey
+    val id: Int,
     val nombre: String,
     val marca: String,
     val modelo: String,
+    val descripcion: String? = null,
     val categoria: Categoria,
     val stockTotal: Int,
     val stockDisponible: Int,
