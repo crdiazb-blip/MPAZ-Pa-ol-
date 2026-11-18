@@ -58,5 +58,18 @@ services:
       retries: 12
       start_period: 40s
 
+  audit-service:
+    build: ./audit-service
+    container_name: panol-audit-service
+    restart: unless-stopped
+    environment:
+      <<: *service-env
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8084/actuator/health | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
 volumes:
   postgres_local_data:
