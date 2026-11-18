@@ -1,0 +1,11 @@
+# Secretos: nunca versionar
+.env
+*.pem
+
+# Maven / IDE
+target/
+*.class
+*.log
+.idea/
+*.iml
+.vscode/

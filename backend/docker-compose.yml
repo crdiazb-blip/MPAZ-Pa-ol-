@@ -1,0 +1,30 @@
+name: mpaz-panol
+
+# Cada microservicio tiene su propio Dockerfile y su propio contenedor.
+# Solo el api-gateway publica un puerto hacia afuera (8080).
+#
+#   docker compose up -d --build                  -> usa la base de datos de Supabase (.env)
+#   docker compose --profile local up -d --build  -> ademas levanta un Postgres local de pruebas
+
+services:
+  # Base de datos Postgres solo para desarrollo offline (perfil "local").
+  postgres-local:
+    image: postgres:17-alpine
+    profiles: ["local"]
+    container_name: panol-postgres-local
+    environment:
+      POSTGRES_DB: panol
+      POSTGRES_USER: panol
+      POSTGRES_PASSWORD: panol
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_local_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U panol -d panol"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres_local_data:
