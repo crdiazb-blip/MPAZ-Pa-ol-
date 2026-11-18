@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -52,6 +53,7 @@ import com.example.mpazpaolr.ui.components.Header
 @Composable
 fun AdminHome(
     onIrInventario: () -> Unit,
+    onIrSolicitudes: () -> Unit,
     onCerrarSesion: () -> Unit
 ) {
     val context = LocalContext.current
@@ -105,7 +107,11 @@ fun AdminHome(
                 TextButton(onClick = onCerrarSesion) { Text("Salir") }
             }
 
-            Button(onClick = onIrInventario, modifier = Modifier.fillMaxWidth()) {
+            Button(onClick = onIrSolicitudes, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Default.Notifications, contentDescription = null)
+                Text("  Solicitudes de préstamo")
+            }
+            OutlinedButton(onClick = onIrInventario, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Default.Build, contentDescription = null)
                 Text("  Gestionar inventario")
             }

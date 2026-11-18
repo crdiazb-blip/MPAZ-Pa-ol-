@@ -17,11 +17,13 @@ import com.example.mpazpaolr.model.Rol
 import com.example.mpazpaolr.ui.screen.AdminEquipoForm
 import com.example.mpazpaolr.ui.screen.AdminHome
 import com.example.mpazpaolr.ui.screen.AdminInventario
+import com.example.mpazpaolr.ui.screen.AdminSolicitudes
 import com.example.mpazpaolr.ui.screen.Carrito
 import com.example.mpazpaolr.ui.screen.Login
 import com.example.mpazpaolr.ui.screen.MisSolicitudes
 import com.example.mpazpaolr.ui.screen.Principal
 import com.example.mpazpaolr.ui.screen.Solicitud
+import com.example.mpazpaolr.ui.viewmodel.GestionSolicitudesViewModel
 import com.example.mpazpaolr.ui.viewmodel.InventarioViewModel
 import com.example.mpazpaolr.ui.viewmodel.LoginViewModel
 import com.example.mpazpaolr.ui.viewmodel.PanolViewModel
@@ -40,6 +42,7 @@ object Routes {
     const val ADMIN_HOME = "admin_home"
     const val ADMIN_INVENTARIO = "admin_inventario"
     const val ADMIN_EQUIPO_FORM = "admin_equipo_form"
+    const val ADMIN_SOLICITUDES = "admin_solicitudes"
 
     /** Pantalla de inicio de cada perfil. */
     fun inicioDe(rol: Rol): String = if (rol == Rol.ADMIN) ADMIN_HOME else PRINCIPAL
@@ -51,6 +54,7 @@ fun AppNavigation() {
     val panolViewModel: PanolViewModel = viewModel()
     val loginViewModel: LoginViewModel = viewModel()
     val inventarioViewModel: InventarioViewModel = viewModel()
+    val gestionViewModel: GestionSolicitudesViewModel = viewModel()
 
     val cerrarSesion = {
         panolViewModel.limpiarSesion()
@@ -136,6 +140,7 @@ fun AppNavigation() {
             SoloPara(Rol.ADMIN, navController) {
                 AdminHome(
                     onIrInventario = { navController.navigate(Routes.ADMIN_INVENTARIO) },
+                    onIrSolicitudes = { navController.navigate(Routes.ADMIN_SOLICITUDES) },
                     onCerrarSesion = cerrarSesion
                 )
             }
@@ -154,6 +159,15 @@ fun AppNavigation() {
                         inventarioViewModel.editarEquipo(equipo)
                         navController.navigate(Routes.ADMIN_EQUIPO_FORM)
                     }
+                )
+            }
+        }
+
+        composable(Routes.ADMIN_SOLICITUDES) {
+            SoloPara(Rol.ADMIN, navController) {
+                AdminSolicitudes(
+                    viewModel = gestionViewModel,
+                    onVolver = { navController.popBackStack() }
                 )
             }
         }
